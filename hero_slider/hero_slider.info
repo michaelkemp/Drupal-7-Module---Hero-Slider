@@ -1,0 +1,16 @@
+name = Hero Image Slider
+description = Hero Image Slider Block Module
+package = Hero Image Slider
+core = 7.x
+version = 1.16
+
+dependencies[] = date
+dependencies[] = image
+dependencies[] = list
+dependencies[] = number
+dependencies[] = options
+dependencies[] = text
+
+files[] = hero_slider.install
+files[] = hero_slider.module
+

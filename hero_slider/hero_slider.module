@@ -1,0 +1,551 @@
+<?php
+
+function hero_slider_help($path, $arg){
+    switch($path){
+        case "admin/help#hero_slider":
+            return '<p>' . t("Hero Slider Block Module.") . '</p>';
+            break;
+    }
+}
+
+/**
+ * Implements hook_node_info()
+ */
+// ================ ADDS CONTENT TYPE - Slider Slides ================
+function hero_slider_node_info() {
+    $items = array(
+        'hero_slider' => array(
+            'name' => t('Hero Slider Slides'),
+            'base' => 'node_content',
+            'description' => '',
+            'has_title' => '1',
+            'title_label' => t('Slide Name'),
+            'help' => '',
+        ),
+    );
+  return $items;
+    
+}
+
+/**
+ * Implement hook_form()
+ */
+// ================ HOOK To ADD CONTENT FOR NEW TYPE - Feature Page ================
+function hero_slider_form($node, $form_state) {
+    return node_content_form($node, $form_state);
+}
+
+
+/**
+ * Implements hook_block_info().
+ */
+function hero_slider_block_info(){
+    $blocks['display_hero_slider'] = array(
+        'info' => t("Display Hero Slider"),
+        'cache' => DRUPAL_CACHE_GLOBAL,
+    );
+    $blocks['demonstrate_hero_slider_slide'] = array(
+        'info' => t("Demonstrate Hero Slider"),
+        'cache' => DRUPAL_CACHE_GLOBAL,
+    );
+    return $blocks;
+}
+
+/**
+ *  Implements hook_block_view().
+ */
+
+function hero_slider_block_view($block_name = ""){
+    switch ($block_name){
+        case 'display_hero_slider':
+            $block['subject'] = t("Display Hero Slider");
+            $block['content'] = displayHeroSlider();
+            return $block;
+        case 'demonstrate_hero_slider_slide':
+            $block['subject'] = t("Demonstrate Hero Slider");
+            $block['content'] = demonstrateHeroSlider();
+            return $block;
+    }
+
+}
+
+function hero_slider_form_alter(&$form, &$form_state, $form_id) {
+
+    switch($form_id) {
+        case 'hero_slider_node_form' : $form['#after_build'][] = 'hero_slider_after_build'; break;
+        
+    }
+    
+}
+function hero_slider_after_build($form, &$form_state) {
+    
+$js=<<<JS
+    (function ($) { jQuery(document).ready(function($) {
+        
+        $('body').delegate('.image-preview img', 'click', function(e) {
+            var MAXWIDE = 1920;
+            var MAXHIGH = 1080;
+            var IMGWIDE = $(this).width();
+            var IMGHIGH = $(this).height();
+            
+            var offset = $(this).offset();
+            var left = e.pageX - offset.left;
+            var top = e.pageY - offset.top;
+            var realLeft = Math.floor(left * (MAXWIDE/IMGWIDE));
+            var realTop = Math.floor(top * (MAXHIGH/IMGHIGH));
+            
+            $('#edit-field-hero-slider-focus-top-und-0-value').val(realTop);
+            $('#edit-field-hero-slider-focus-left-und-0-value').val(realLeft);
+        });
+        
+    }); }(jQuery));
+JS;
+    
+    drupal_add_js($js, array('type'=>'inline', 'scope'=>'footer', 'weight'=>100));
+    return $form;
+}
+
+function displayHeroSlider() {
+    
+    $now = time();
+    
+    $query = new EntityFieldQuery();
+    $query  ->entityCondition('entity_type', 'node')
+            ->entityCondition('bundle', 'hero_slider')
+            ->fieldCondition('field_hero_slider_active_dates', 'value',  $now, '<=')
+            ->fieldCondition('field_hero_slider_active_dates', 'value2', ($now - 86400), '>=')
+            ->propertyCondition('status', NODE_PUBLISHED)
+            ->fieldOrderBy('field_hero_slider_order', 'value', 'ASC')
+            ->propertyOrderBy('title', 'ASC')
+            ->range(0, 5);
+
+    $result = $query->execute();
+    if (!empty($result['node'])) {
+        $nids = array_keys($result['node']);
+    } else {
+        $nids = array();    
+    }
+            
+    $slides = "";
+    $cnt = 0;
+    foreach($nids as $nid) {
+        $slides.= htmlHeroSlide($nid, $cnt);
+        ++$cnt;
+    }
+    if ($cnt == 0) {
+        $output = array (
+            '#type' => "markup",
+            '#prefix' => "",
+            '#markup' => "",
+            '#suffix' => "",
+            );
+        return $output;
+    }
+    
+    $html = "<div class='hero-slider-wrapper'>";
+    $html.= "<div class='control-handle' id='next-handle'><i class='fa fa-caret-right' aria-hidden='true'></i></div>";
+    $html.= "<div class='control-handle' id='prev-handle'><i class='fa fa-caret-left' aria-hidden='true'></i></div>";
+    $html.= $slides;
+    $html.= "</div>";
+    
+    $js = jsHeroSlide($cnt);
+    drupal_add_js($js, array('type'=>'inline', 'scope'=>'footer', 'weight'=>100));
+    $css = cssHeroSlide();
+    drupal_add_css($css,array('type'=>'inline', 'group'=>CSS_THEME, 'weight'=>100));
+    
+	$output = array (
+		'#type' => "markup",
+		'#prefix' => "<div class='simple-slider-outer-div'>",
+		'#markup' => "<div class='simple-slider-box'>" . $html . "</div>",
+		'#suffix' => "</div>",
+		);
+	return $output;
+    
+}
+
+function demonstrateHeroSlider() {
+    
+    $slides = array();
+    $cnt = 0;
+	if (arg(0) == 'node' && is_numeric(arg(1))) {
+		$nid = arg(1);
+        $slides = htmlHeroSlide($nid, 0);
+        $cnt = 1;
+    }
+    if ($cnt == 0) {
+        $output = array (
+            '#type' => "markup",
+            '#prefix' => "",
+            '#markup' => "",
+            '#suffix' => "",
+            );
+        return $output;
+    }
+
+    $html = "<div class='hero-slider-wrapper'>";
+    $html.= "<div class='control-handle' id='next-handle'><i class='fa fa-caret-right' aria-hidden='true'></i></div>";
+    $html.= "<div class='control-handle' id='prev-handle'><i class='fa fa-caret-left' aria-hidden='true'></i></div>";
+    $html.= $slides;
+    $html.= "</div>";
+    
+    $js = jsHeroSlide($cnt);
+    drupal_add_js($js, array('type'=>'inline', 'scope'=>'footer', 'weight'=>100));
+    $css = cssHeroSlide();
+    drupal_add_css($css,array('type'=>'inline', 'group'=>CSS_THEME, 'weight'=>100));
+    
+	$output = array (
+		'#type' => "markup",
+		'#prefix' => "<div class='simple-slider-outer-div'>",
+		'#markup' => "<div class='simple-slider-box'>" . $html . "</div>",
+		'#suffix' => "</div>",
+		);
+	return $output;
+    
+}
+
+
+
+function htmlHeroSlide($nid, $cnt) {
+
+    $node = node_load($nid);
+    if ($node->type != 'hero_slider') {
+        return "";
+    }  
+    
+    $title = isset($node->field_hero_slider_title[LANGUAGE_NONE][0]["value"]) ?         trim($node->field_hero_slider_title[LANGUAGE_NONE][0]["value"]) : "";
+    $text = isset($node->field_hero_slider_text[LANGUAGE_NONE][0]["value"]) ?           trim($node->field_hero_slider_text[LANGUAGE_NONE][0]["value"]) : "";
+    $imgUri = isset($node->field_hero_slider_image[LANGUAGE_NONE][0]["uri"]) ?          trim($node->field_hero_slider_image[LANGUAGE_NONE][0]["uri"]) : "";
+    $imgUrl = file_create_url($imgUri);
+    $lnkTxt = isset($node->field_hero_slider_link_text[LANGUAGE_NONE][0]["value"]) ?    trim($node->field_hero_slider_link_text[LANGUAGE_NONE][0]["value"]) : "";
+    $lnkUrl = isset($node->field_hero_slider_link_url[LANGUAGE_NONE][0]["value"]) ?     trim($node->field_hero_slider_link_url[LANGUAGE_NONE][0]["value"]) : "";
+    $colour = isset($node->field_hero_slider_color_scheme[LANGUAGE_NONE][0]["value"]) ? $node->field_hero_slider_color_scheme[LANGUAGE_NONE][0]["value"] : 0; 
+    $layout = isset($node->field_hero_slider_layout[LANGUAGE_NONE][0]["value"]) ?       $node->field_hero_slider_layout[LANGUAGE_NONE][0]["value"] : 0; 
+    $top = isset($node->field_hero_slider_focus_top[LANGUAGE_NONE][0]["value"]) ?       $node->field_hero_slider_focus_top[LANGUAGE_NONE][0]["value"] : 0; 
+    $left = isset($node->field_hero_slider_focus_left[LANGUAGE_NONE][0]["value"]) ?     $node->field_hero_slider_focus_left[LANGUAGE_NONE][0]["value"] : 0; 
+
+    switch ($colour) {
+        case 0: $colClass = "text-light matte-dark"; break;
+        case 1: $colClass = "text-dark matte-light"; break;
+        case 2: $colClass = "text-light"; break;
+        case 3: $colClass = "text-dark"; break;
+        default: $colClass = "text-light matte-dark"; break;
+    }
+    switch ($layout) {
+        case 0: $layClass = "align-left"; break;
+        case 1: $layClass = "align-center"; break;
+        case 2: $layClass = "align-right"; break;
+        default: $layClass = "align-left"; break;
+    }
+
+    if ($lnkTxt != "") { 
+    
+        if ($lnkUrl != "") {
+            $target = (stripos($lnkUrl,"http") === 0) ? " target='_blank'": "";
+            $href = "<p><a href='${lnkUrl}'${target} class='hero-slider-action'>${lnkTxt}</a></p>";
+        } else {
+            $href = "";
+        }
+$html=<<<HTML
+    <div class='hero-slider' id='hero-slide-${cnt}' style='z-index:100; display:none;'>
+        <div class='hero-slider-image'><div class='hero-slider-image'><image src='${imgUrl}' data-left='${left}' data-top='${top}'></div></div>
+        <div class='hero-slider-text ${colClass} ${layClass}'>
+            <div  class='hero-slider-text-content'>
+                <h1 class='hero-slider-title'>${title}</h1>
+                <p class='hero-slider-body'>${text}</p>
+                ${href}
+            </div>
+        </div>
+    </div>
+HTML;
+
+    } else {
+        
+        if ($lnkUrl != "") {
+            $target = (stripos($lnkUrl,"http") === 0) ? " target='_blank'": "";
+            $hrefTop = "<a href='${lnkUrl}'${target}>";
+            $hrefEnd = "</a>";
+        } else {
+            $hrefTop = "";
+            $hrefEnd = "";
+        }
+$html=<<<HTML
+    <div class='hero-slider' id='hero-slide-${cnt}' style='z-index:100; display:none;'>
+        <div class='hero-slider-image'><div class='hero-slider-image'><image src='${imgUrl}' data-left='${left}' data-top='${top}'></div></div>
+        <div class='hero-slider-text ${colClass} ${layClass}'>
+            ${hrefTop}
+                <div  class='hero-slider-text-content'>
+                    <h1 class='hero-slider-title'>${title}</h1>
+                    <p class='hero-slider-body'>${text}</p>
+                </div>
+            ${hrefEnd}    
+        </div>
+    </div>
+HTML;
+
+    }    
+
+    return $html;
+    
+}
+
+function jsHeroSlide($count) {
+    
+$js=<<<JS
+    (function ($) { jQuery(document).ready(function($) {
+
+        var TOTAL = ${count};
+        var VISIBLE = 0;
+        var NEXT = 0;
+        
+        function setHeroSize(slide) {
+            var MAXWIDE = $('.hero-slider-wrapper').width();
+            var MAXHIGH = $('.hero-slider-wrapper').height();
+            var FULLWIDE = 1920;
+            var FULLHIGH = 1080;
+            var WHRATIO = FULLWIDE/FULLHIGH;
+            var HWRATIO = FULLHIGH/FULLWIDE;
+
+            $('#hero-slide-'+slide+' .hero-slider').css({'height':MAXHIGH+'px','width':MAXWIDE+'px'});
+            
+            var FOCUSTOP = $('#hero-slide-'+slide+' .hero-slider-image img').data('top');
+            var CENTRTOP = FULLHIGH/2;
+            var FOCUSLFT = $('#hero-slide-'+slide+' .hero-slider-image img').data('left');
+            var CENTRLFT = FULLWIDE/2;
+            
+            if (Math.floor(WHRATIO * MAXHIGH) > MAXWIDE) { // AT THIS HEIGHT, IMAGE IS WIDER THAN CONTAINER
+                var imgHigh = MAXHIGH;
+                var imgWide = Math.floor(WHRATIO * MAXHIGH);
+
+                // FOCUS ON LEFT FOCAL POINT
+                var cenLft = CENTRLFT * (imgWide/FULLWIDE);
+                var focLft = FOCUSLFT * (imgWide/FULLWIDE);
+                var diff = cenLft-focLft;
+                var lftMrgn = ((imgWide - MAXWIDE)/2) - diff;
+                if (lftMrgn < 0) { lftMrgn = 0; }
+                if (lftMrgn > (imgWide - MAXWIDE)) { lftMrgn = imgWide - MAXWIDE; }
+                
+                $('#hero-slide-'+slide+' .hero-slider-image img').css({'max-width':imgWide+'px', 'width':imgWide+'px', 'height':imgHigh+'px', 'margin-top':'0px', 'margin-bottom':'0px', 'margin-left':'-'+lftMrgn+'px', 'margin-right':'0px'});
+            
+            } else { // AT THIS WIDTH, IMAGE IS TALLER THAN CONTAINER
+                var imgWide = MAXWIDE;
+                var imgHigh = Math.floor(HWRATIO * MAXWIDE);
+                
+                // FOCUS ON TOP FOCAL POINT
+                var cenTop = CENTRTOP * (imgHigh/FULLHIGH);
+                var focTop = FOCUSTOP * (imgHigh/FULLHIGH);
+                var diff = cenTop-focTop;
+                var topMrgn = ((imgHigh - MAXHIGH)/2) - diff;
+                if (topMrgn < 0) { topMrgn = 0; }
+                if (topMrgn > (imgHigh - MAXHIGH)) { topMrgn = imgHigh - MAXHIGH; }
+                
+                $('#hero-slide-'+slide+' .hero-slider-image img').css({'max-width':imgWide+'px', 'width':imgWide+'px', 'height':imgHigh+'px', 'margin-top':'-'+topMrgn+'px', 'margin-bottom':'0px', 'margin-left':'0px', 'margin-right':'0px'});
+            }
+
+        }
+
+        function setOverlaySize() {
+            var MAXWIDE = $('.hero-slider-wrapper').width();
+            var MAXHIGH = $('.hero-slider-wrapper').height();
+            var OVERWIDE = (MAXWIDE * 0.45);
+            var CENTER = 0;
+            
+            var OVERHIGH = MAXHIGH - 20;
+            $('.hero-slider-text').css({'height': OVERHIGH+'px', 'margin-top':'10px', 'margin-bottom':'10px', 'justify-content':'center' });
+
+            if (OVERWIDE > 900) { OVERWIDE = 900; }
+            if (OVERWIDE < 360) { 
+                OVERWIDE = MAXWIDE - 40; 
+
+                var CENTER = (MAXWIDE - OVERWIDE)/2;
+                $('.hero-slider-text').css({'top':'0px', 'left': CENTER+ 'px', 'width': OVERWIDE+'px', 'height': OVERHIGH+'px', 'justify-content':'flex-end'});
+                
+                var perc = 100 - ((800/10.6) - (MAXWIDE/10.6));
+                var h1Size = 52 * perc/100;
+                var h1Line = h1Size * 1.25;
+                var pSize =  32 * perc/100;
+                var pLine = pSize * 1.25;
+                $('.hero-slider-text h1').css({'font-size':h1Size+'px', 'line-height':h1Line+'px'});
+                $('.hero-slider-text p').css({'font-size':pSize+'px', 'line-height':pLine+'px'});
+                
+            } else {
+                var CENTER = (MAXWIDE - OVERWIDE)/2;
+                var LEFT = (MAXWIDE/2) - OVERWIDE;
+                var RIGHT = (MAXWIDE/2);
+                $('.hero-slider-text.align-left').css({'top':'0px', 'left': LEFT+'px', 'width': OVERWIDE+'px', 'height': OVERHIGH+'px', });
+                $('.hero-slider-text.align-right').css({'top':'0px', 'left': RIGHT+'px', 'width': OVERWIDE+'px', 'height': OVERHIGH+'px', });
+                $('.hero-slider-text.align-center').css({'top':'0px', 'left': CENTER+ 'px', 'width': OVERWIDE+'px', 'height': OVERHIGH+'px', });
+            }
+        }
+        
+        function resizeHeros() {
+            for(var i = 0; i<=TOTAL; ++i) { setHeroSize(i); }
+            setOverlaySize();
+        }
+        
+        $(window).resize(function(){ resizeHeros(); });
+        resizeHeros();
+
+        // =========================== SLIDE CHANGE ===========================
+        function showNext() {
+            $('#hero-slide-'+VISIBLE).fadeOut();
+            $('#hero-slide-'+NEXT).fadeIn();
+            VISIBLE = NEXT;
+        }
+        showNext();
+        
+        var mSec = 8000;
+        var timer;
+        
+        if (TOTAL > 1) {
+            timer = setTimeout(function(){ oneStep(); }, mSec);
+        } else {
+            $('.control-handle').css({'display':'none'});
+        }
+        function oneStep() {
+            NEXT = (VISIBLE + 1) % TOTAL;
+            showNext();
+            timer = setTimeout(function(){ oneStep(); }, mSec);
+        }
+        
+        $('#prev-handle').click(function(){
+            NEXT = (VISIBLE + (TOTAL-1)) % TOTAL;
+            showNext();
+            clearTimeout(timer);
+            timer = setTimeout(function(){ oneStep(); }, mSec);
+        });
+        $('#next-handle').click(function(){
+            NEXT = (VISIBLE + 1) % TOTAL;
+            showNext();
+            clearTimeout(timer);
+            timer = setTimeout(function(){ oneStep(); }, mSec);
+        });
+        
+    }); }(jQuery));
+JS;
+    
+    return $js;
+}
+
+function cssHeroSlide() {
+$css=<<<CSS
+    .hero-slider-wrapper {
+        overflow: hidden;
+        height: 500px;
+        width: 100%;
+        position: relative;
+    }
+    .hero-slider {
+        box-sizing:border-box;
+        overflow: hidden;
+        position: absolute;
+        left:0px;
+        top:0px;
+    }
+    .hero-slider-text-content {
+        padding: 10px 10px 20px 10px;
+    }
+    .hero-slider-text {
+        box-sizing:border-box;
+        position: absolute;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+    .hero-slider-text h1{
+        text-align: center;
+        font-size: 52px;
+        font-weight: normal;
+        line-height: 65px;
+        margin: 0px;
+    }
+    .hero-slider-text p{
+        padding-top: 5px;
+        text-align: center;
+        font-size: 32px;
+        line-height: 40px;
+        margin: 0px;
+    }
+    .hero-slider-body {
+        padding-bottom: 10px;
+    }
+    
+    .text-light h1, .text-light p, .text-light a {
+        text-decoration: none;
+        color: #fff;
+    }
+    .text-dark h1, .text-dark p, .text-dark a{
+        text-decoration: none;
+        color: #222;
+    }
+    .matte-dark .hero-slider-text-content {
+        background-color: rgba(0,46,93,0.7);
+    }
+    .matte-light .hero-slider-text-content {
+        background-color: rgba(255,255,255,0.7);
+    }
+
+    a.hero-slider-action {
+        background-color: #002E5D;
+        padding: 5px 14px;
+        color: #fff;            
+    }
+    
+    .matte-light a.hero-slider-action {
+        background-color: #002E5D;
+        padding: 5px 14px;
+        color: #fff;
+    }
+    
+    .matte-dark a.hero-slider-action {
+        background-color: #fff;
+        padding: 5px 14px;
+        color: #002E5D;
+    }
+    .control-handle {
+        position:absolute;
+        z-index:500;
+        font-size: 20px;
+        width:10px;
+        height:100%;
+        color:white;
+        text-shadow: 1px 1px 0px black;
+        cursor:pointer;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;                
+    }
+    #prev-handle {
+        left:2px;
+        text-align: left;
+    }
+    #next-handle {
+        right:2px;
+        text-align: right;
+    }
+
+    /* ================================== HERO SLIDER UPDATES ================================== */    
+    
+    #hero a.hero-slider-action {
+        font-size: 20px;
+        padding: 8px 50px;
+        text-transform: uppercase;
+        -webkit-transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .matte-light a.hero-slider-action:hover {
+        background-color: #369;
+    }
+    .matte-dark a.hero-slider-action:hover {
+        background-color: #eee;
+    }
+    .hero-slider-text p {
+        font-size: 24px;
+    }
+    .hero-slider-text h1 {
+        font-size: 45px;
+    }    
+    
+CSS;
+    
+    return $css;
+}
