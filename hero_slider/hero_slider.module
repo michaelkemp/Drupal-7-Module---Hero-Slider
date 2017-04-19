@@ -214,6 +214,7 @@ function htmlHeroSlide($nid, $cnt) {
     
     $title = isset($node->field_hero_slider_title[LANGUAGE_NONE][0]["value"]) ?         trim($node->field_hero_slider_title[LANGUAGE_NONE][0]["value"]) : "";
     $text = isset($node->field_hero_slider_text[LANGUAGE_NONE][0]["value"]) ?           trim($node->field_hero_slider_text[LANGUAGE_NONE][0]["value"]) : "";
+    $imgALT = isset($node->field_hero_slider_image[LANGUAGE_NONE][0]["alt"]) ?          trim($node->field_hero_slider_image[LANGUAGE_NONE][0]["alt"]) : "";
     $imgUri = isset($node->field_hero_slider_image[LANGUAGE_NONE][0]["uri"]) ?          trim($node->field_hero_slider_image[LANGUAGE_NONE][0]["uri"]) : "";
     $imgUrl = file_create_url($imgUri);
     $lnkTxt = isset($node->field_hero_slider_link_text[LANGUAGE_NONE][0]["value"]) ?    trim($node->field_hero_slider_link_text[LANGUAGE_NONE][0]["value"]) : "";
@@ -223,6 +224,8 @@ function htmlHeroSlide($nid, $cnt) {
     $top = isset($node->field_hero_slider_focus_top[LANGUAGE_NONE][0]["value"]) ?       $node->field_hero_slider_focus_top[LANGUAGE_NONE][0]["value"] : 0; 
     $left = isset($node->field_hero_slider_focus_left[LANGUAGE_NONE][0]["value"]) ?     $node->field_hero_slider_focus_left[LANGUAGE_NONE][0]["value"] : 0; 
 
+    $altTXT = ($imgALT == "") ? $title . " - " . $text : $imgALT;
+    
     switch ($colour) {
         case 0: $colClass = "text-light matte-dark"; break;
         case 1: $colClass = "text-dark matte-light"; break;
@@ -247,7 +250,7 @@ function htmlHeroSlide($nid, $cnt) {
         }
 $html=<<<HTML
     <div class='hero-slider' id='hero-slide-${cnt}' style='z-index:100; display:none;'>
-        <div class='hero-slider-image'><div class='hero-slider-image'><image src='${imgUrl}' data-left='${left}' data-top='${top}'></div></div>
+        <div class='hero-slider-image'><div class='hero-slider-image'><image src='${imgUrl}' data-left='${left}' data-top='${top}' alt='${altTXT}'></div></div>
         <div class='hero-slider-text ${colClass} ${layClass}'>
             <div  class='hero-slider-text-content'>
                 <h1 class='hero-slider-title'>${title}</h1>
@@ -270,7 +273,7 @@ HTML;
         }
 $html=<<<HTML
     <div class='hero-slider' id='hero-slide-${cnt}' style='z-index:100; display:none;'>
-        <div class='hero-slider-image'><div class='hero-slider-image'><image src='${imgUrl}' data-left='${left}' data-top='${top}'></div></div>
+        <div class='hero-slider-image'><div class='hero-slider-image'><image src='${imgUrl}' data-left='${left}' data-top='${top}' alt='${altTXT}'></div></div>
         <div class='hero-slider-text ${colClass} ${layClass}'>
             ${hrefTop}
                 <div  class='hero-slider-text-content'>
