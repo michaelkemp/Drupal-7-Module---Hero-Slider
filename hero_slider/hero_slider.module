@@ -158,10 +158,10 @@ function displayHeroSlider($grpNid = NULL) {
         
     // ============ GROUP SPECIFIED ============    
     } else {
+        $nids = array();
         $grpNode = node_load($grpNid);
         $children = isset($grpNode->field_hero_slider_group_element[LANGUAGE_NONE]) ? $grpNode->field_hero_slider_group_element[LANGUAGE_NONE] : array(); 
         if (count($children) > 0) {
-            $nids = array();
             foreach($children as $child) {
                 $nids[] = $child["target_id"];
             }

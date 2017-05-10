@@ -2,7 +2,7 @@ name = Hero Image Slider
 description = Hero Image Slider Block Module
 package = Hero Image Slider
 core = 7.x
-version = 2.10
+version = 2.11
 
 dependencies[] = date
 dependencies[] = image
