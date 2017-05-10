@@ -21,9 +21,19 @@ function hero_slider_install() {
  * Implements hook_uninstall().
  */
 function hero_slider_uninstall() {
-    $type = 'hero_slider';
+    
+    $type1 = 'hero_slider';
     $sql = 'SELECT nid FROM {node} n WHERE n.type = :type';
-    $result = db_query($sql, array(':type' => $type));
+    $result = db_query($sql, array(':type' => $type1));
+    $nodeids = array();
+    foreach ($result as $row) {
+        $nodeids[] = $row->nid;
+    }
+    node_delete_multiple($nodeids);
+    
+    $type2 = 'hero_slider_group';
+    $sql = 'SELECT nid FROM {node} n WHERE n.type = :type';
+    $result = db_query($sql, array(':type' => $type2));
     $nodeids = array();
     foreach ($result as $row) {
         $nodeids[] = $row->nid;
@@ -37,8 +47,13 @@ function hero_slider_uninstall() {
     foreach ($instances as $instance_name => $fieldinstance) {
         field_delete_instance($fieldinstance);
     }
+    $instances = field_info_instances('node', 'hero_slider_group');
+    foreach ($instances as $instance_name => $fieldinstance) {
+        field_delete_instance($fieldinstance);
+    }
     
-    node_type_delete($type);
+    node_type_delete($type1);
+    node_type_delete($type2);
     field_purge_batch(500);
 }
 

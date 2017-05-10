@@ -466,6 +466,51 @@ function _hero_slider_installed_instances() {
     ),
   );
 
+  // Exported field_instance:
+  // 'node-hero_slider_group-field_hero_slider_group_element'.
+  $field_instances['node-hero_slider_group-field_hero_slider_group_element'] = array(
+    'bundle' => 'hero_slider_group',
+    'default_value' => NULL,
+    'deleted' => 0,
+    'description' => '',
+    'display' => array(
+      'default' => array(
+        'label' => 'hidden',
+        'settings' => array(),
+        'type' => 'hidden',
+        'weight' => 0,
+      ),
+      'teaser' => array(
+        'label' => 'above',
+        'settings' => array(),
+        'type' => 'hidden',
+        'weight' => 0,
+      ),
+    ),
+    'entity_type' => 'node',
+    'field_name' => 'field_hero_slider_group_element',
+    'label' => 'Group Elements',
+    'required' => 0,
+    'settings' => array(
+      'user_register_form' => FALSE,
+    ),
+    'widget' => array(
+      'active' => 1,
+      'module' => 'entityreference',
+      'settings' => array(
+        'match_operator' => 'CONTAINS',
+        'path' => '',
+        'references_dialog_add' => 1,
+        'references_dialog_edit' => 1,
+        'references_dialog_search' => 1,
+        'references_dialog_search_view' => '',
+        'size' => 60,
+      ),
+      'type' => 'entityreference_autocomplete',
+      'weight' => 1,
+    ),
+  );
+  
   // Translatables
   // Included for use with string extractors like potx.
   t('Active Start/End Dates');
@@ -480,6 +525,7 @@ function _hero_slider_installed_instances() {
   t('Slider Image');
   t('Slider Title Text');
   t('Slides will be ordered by this value - Slide 1 will appear before Slide 2');
-
+  t('Group Elements');
+  
   return $field_instances;
 }
