@@ -78,7 +78,7 @@ function hero_slider_block_info(){
 function hero_slider_block_view($block_name = ""){
     $block = array();
     
-    $result = db_query("SELECT * FROM node WHERE (type = 'hero_slider_group') AND (status = 1)");
+    $result = db_query("SELECT * FROM {node} WHERE (type = 'hero_slider_group') AND (status = 1)");
     foreach($result as $row) {
         $title = trim($row->title);
         $nid = intval($row->nid);
