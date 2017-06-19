@@ -50,7 +50,7 @@ function hero_slider_form($node, $form_state) {
 function hero_slider_block_info(){
     $blocks = array();
     
-    $result = db_query("SELECT * FROM node WHERE (type = 'hero_slider_group') AND (status = 1)");
+    $result = db_query("SELECT * FROM {node} WHERE (type = 'hero_slider_group') AND (status = 1)");
     foreach($result as $row) {
         $title = trim($row->title);
         $nid = intval($row->nid);
